@@ -124,6 +124,50 @@ UIFactory::UIFactory() {
 
         return ftxui::Input(text_state.get(), placeholder, option);
     };
+    
+    builders_["hbox"] = [this](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
+        ftxui::Components children;
+
+        if (item.contains("content") && item["content"].is_array()) {
+            for (const auto& child : item["content"]) {
+                std::string child_type = child.value("type", "unknown");
+
+                if (builders_.count(child_type)) {
+                    children.push_back(builders_[child_type](child, js, on_refresh));
+                } else {
+                    children.push_back(
+                        ftxui::Renderer([child_type] {
+                            return ftxui::text("Unknown type: " + child_type);
+                        })
+                    );
+                }
+            }
+        }
+
+        return ftxui::Container::Horizontal(children);
+    };
+    
+    builders_["vbox"] = [this](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
+        ftxui::Components children;
+
+        if (item.contains("content") && item["content"].is_array()) {
+            for (const auto& child : item["content"]) {
+                std::string child_type = child.value("type", "unknown");
+
+                if (builders_.count(child_type)) {
+                    children.push_back(builders_[child_type](child, js, on_refresh));
+                } else {
+                    children.push_back(
+                        ftxui::Renderer([child_type] {
+                            return ftxui::text("Unknown type: " + child_type);
+                        })
+                    );
+                }
+            }
+        }
+
+        return ftxui::Container::Vertical(children);
+    };
 }
 
 void UIFactory::buildUI(const nlohmann::json& data, ftxui::Component& container, JsEngine& jsEngine, std::function<void()> on_refresh) {
