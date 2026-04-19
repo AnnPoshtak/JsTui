@@ -3,6 +3,7 @@ let isCheckboxChecked = false;
 let selectedRadio = 0;
 let selectedMenu = 1;
 let selectedToggle = 2;
+let inputState = "Текст";
 
 const radioOptions = ["Option 1", "Option 2", "Option 3"];
 const menuOptions = ["Start game", "Settings", "Exit the game"];
@@ -25,6 +26,10 @@ function onMenuChange(newIndex) {
 
 function onToggleChange(newIndex) {
     selectedToggle = newIndex;
+}
+
+function save(newText){
+    inputState = newText;
 }
 
 function render() {
@@ -84,9 +89,20 @@ function render() {
                 content: toggleOptions,
                 selected: selectedToggle,
                 action: "onToggleChange"
+            },
+            { type: "separator" },
+            {
+                type: "input",
+                placeholder: "Enter text....",
+                content: inputState,
+                action: "save"
+            },
+            {
+                type: "text",
+                content: inputState ? inputState : "Тексту поки немає"
             }
         ],
         IsBorder: true,
-        BorderColor: { r: 252, g: 186, b: 3 }
+        BorderColor: { r: 252, g: 186, b: 3 },
     });
 }

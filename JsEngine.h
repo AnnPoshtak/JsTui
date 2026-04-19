@@ -14,6 +14,7 @@ public:
     std::string callRender();
     void callAction(const std::string& action_name);
     void callActionWithInt(const std::string& actionName, int value);
+    void callActionWithString(const std::string& actionName, std::string& value);
 
 private:
     JSRuntime* rt_;

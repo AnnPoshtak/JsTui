@@ -92,3 +92,22 @@ void JsEngine::callActionWithInt(const std::string& actionName, int value) {
     JS_FreeValue(ctx_, func);
     JS_FreeValue(ctx_, global_obj);
 }
+
+void JsEngine::callActionWithString(const std::string& actionName, std::string& value) {
+    JSValue global_obj = JS_GetGlobalObject(ctx_); 
+    
+    JSValue func = JS_GetPropertyStr(ctx_, global_obj, actionName.c_str());
+    
+    if (JS_IsFunction(ctx_, func)) {
+        JSValue arg = JS_NewString(ctx_, value.c_str());
+        
+        JS_Call(ctx_, func, global_obj, 1, &arg); 
+
+        JS_FreeValue(ctx_, arg);
+    } else {
+        std::cerr << "Function " << actionName << " not found in JS!" << std::endl;
+    }
+    
+    JS_FreeValue(ctx_, func);
+    JS_FreeValue(ctx_, global_obj);
+}

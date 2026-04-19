@@ -106,6 +106,24 @@ UIFactory::UIFactory() {
         };
         return ftxui::Menu(entries_ptr.get(), selected_ptr.get(), option);
     };
+
+    builders_["input"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
+        std::string placeholder = item.value("placeholder", "");
+        std::string action = item.value("action", "");
+        std::string content = item.value("content", "");
+
+        auto text_state = std::make_shared<std::string>();
+        ftxui::InputOption option;
+        
+        option.on_enter = [&js, action, on_refresh, text_state]() {
+            if (!action.empty()) {
+                js.callActionWithString(action, *text_state); 
+            }
+            on_refresh();
+        };
+
+        return ftxui::Input(text_state.get(), placeholder, option);
+    };
 }
 
 void UIFactory::buildUI(const nlohmann::json& data, ftxui::Component& container, JsEngine& jsEngine, std::function<void()> on_refresh) {
