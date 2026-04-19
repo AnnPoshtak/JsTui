@@ -92,7 +92,8 @@ function render() {
     };
     
     return JSON.stringify(uiLayout);
-}```
+}
+```
 
 ## 🧩 Supported Components
 
