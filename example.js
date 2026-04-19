@@ -99,7 +99,7 @@ function render() {
             },
             {
                 type: "text",
-                content: inputState ? inputState : "Тексту поки немає"
+                content: inputState ? inputState : "There is no text yet"
             }
         ],
         IsBorder: true,
