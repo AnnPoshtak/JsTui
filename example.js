@@ -4,9 +4,9 @@ let selectedRadio = 0;
 let selectedMenu = 1;
 let selectedToggle = 2;
 
-const radioOptions = ["Варіант 1", "Варіант 2", "Варіант 3"];
-const menuOptions = ["Почати гру", "Налаштування", "Вийти з гри"];
-const toggleOptions = ["Легко", "Середньо", "Складно"];
+const radioOptions = ["Option 1", "Option 2", "Option 3"];
+const menuOptions = ["Start game", "Settings", "Exit the game"];
+const toggleOptions = ["Easy", "Medium", "Hard"];
 
 function onButtonClick() {
     clickCount++;
@@ -33,29 +33,29 @@ function render() {
         content: [
             {
                 type: "text",
-                content: "=== Тест усіх компонентів фреймворку ==="
+                content: "=== Test all framework components ==="
             },
             { type: "separator" },
             {
                 type: "text",
-                content: "Кількість натискань: " + clickCount
+                content: "number of clicks : " + clickCount
             },
             {
                 type: "button",
-                content: "Натисни мене!",
+                content: "Click on me",
                 action: "onButtonClick"
             },
             { type: "separator" },
             {
                 type: "checkbox",
-                content: "Погоджуюсь з умовами ліцензії",
+                content: "I agree to the license terms",
                 checked: isCheckboxChecked,
                 action: "onCheckboxChange"
             },
             { type: "separator" },
             {
                 type: "text",
-                content: "Оберіть улюблений варіант (Radiobox):"
+                content: "Select your favourite option (Radiobox):"
             },
             {
                 type: "radiobox",
@@ -66,7 +66,7 @@ function render() {
             { type: "separator" },
             {
                 type: "text",
-                content: "Головне меню (Menu):"
+                content: "Main menu (Menu):"
             },
             {
                 type: "menu",
@@ -77,7 +77,7 @@ function render() {
             { type: "separator" },
             {
                 type: "text",
-                content: "Оберіть рівень складності (Toggle):"
+                content: "Choose the difficulty level (Toggle):"
             },
             {
                 type: "toggle",
