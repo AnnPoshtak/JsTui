@@ -14,18 +14,21 @@ Make sure you have the following installed on your system:
 1. **Clone the repository:**
 ```bash
 git clone https://github.com/AnnPoshtak/JsTui
-cd JsTui```
+cd JsTui
+```
 
 2. **Generate build files and compile(Warning: It can take to 5 minutes to compile all files):**
 ```bash
 mkdir build
 cd build
 cmake ..
-cmake --build .```
+cmake --build .
+```
 
 3. **Run application:**
 ```bash
-./JsTui```
+./JsTui
+```
 
 
 ## 🧠 How It Works
@@ -58,6 +61,7 @@ function onButtonClick() {
 function onRadioChange(newIndex) {
     selectedRadio = newIndex;
 }
+```
 
 #### 2. The `render()` Function
 The engine requires a global function named `render()`. It must return a **JSON string** describing the component tree.
@@ -88,7 +92,7 @@ function render() {
     };
     
     return JSON.stringify(uiLayout);
-}
+}```
 
 ## 🧩 Supported Components
 
