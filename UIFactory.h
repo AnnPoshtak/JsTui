@@ -2,8 +2,12 @@
 #include <map>
 #include <string>
 #include <functional>
-#include <ftxui/component/component.hpp>
+#include <memory>
+#include <algorithm>
 #include <nlohmann/json.hpp>
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
+
 #include "JsEngine.h"
 
 using ComponentBuilder = std::function<ftxui::Component(const nlohmann::json&, JsEngine&, std::function<void()>)>;
