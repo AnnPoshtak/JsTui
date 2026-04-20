@@ -1,64 +1,10 @@
 #include "UIFactory.h"
-
-using StyleHandler = std::function<ftxui::Element(ftxui::Element, const nlohmann::json&)>;
-
-ftxui::Element applyStyles(ftxui::Element el, const nlohmann::json& styles) {
-    static const std::map<std::string, StyleHandler> style_handlers = {
-       
-        {"bold", [](ftxui::Element e, const nlohmann::json& val) {
-            return val.get<bool>() ? e | ftxui::bold : e;
-        }},
-        {"dim", [](ftxui::Element e, const nlohmann::json& val) {
-            return val.get<bool>() ? e | ftxui::dim : e;
-        }},
-        {"underlined", [](ftxui::Element e, const nlohmann::json& val) {
-            return val.get<bool>() ? e | ftxui::underlined : e;
-        }},
-
-        {"center", [](ftxui::Element e, const nlohmann::json& val) {
-            return val.get<bool>() ? e | ftxui::center : e;
-        }},
-        {"flex", [](ftxui::Element e, const nlohmann::json& val) {
-            return val.get<bool>() ? e | ftxui::flex : e;
-        }},
-
-        {"color", [](ftxui::Element e, const nlohmann::json& val) {
-            int r = val.value("r", 255);
-            int g = val.value("g", 255);
-            int b = val.value("b", 255);
-            return e | ftxui::color(ftxui::Color::RGB(r, g, b));
-        }},
-        {"bgcolor", [](ftxui::Element e, const nlohmann::json& val) {
-            int r = val.value("r", 0);
-            int g = val.value("g", 0);
-            int b = val.value("b", 0);
-            return e | ftxui::bgcolor(ftxui::Color::RGB(r, g, b));
-        }},
-
-        {"border", [](ftxui::Element e, const nlohmann::json& val) {
-            std::string b_type = val.get<std::string>();
-            if (b_type == "rounded") return e | ftxui::borderRounded;
-            if (b_type == "double") return e | ftxui::borderDouble;
-            if (b_type == "normal") return e | ftxui::border;
-            if (b_type == "empty") return e | ftxui::borderEmpty;
-            return e;
-        }}
-    };
-
-    for (auto it = styles.begin(); it != styles.end(); ++it) {
-        std::string key = it.key();
-        if (style_handlers.count(key)) {
-            el = style_handlers.at(key)(el, it.value());
-        }
-    }
-
-    return el;
-}
+#include "ApplyStyles.h"
 
 UIFactory::UIFactory() {
+
     builders_["text"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         std::string text_val = "";
-        
         if (item.contains("content")) {
             if (item["content"].is_string()) {
                 text_val = item["content"].get<std::string>();
@@ -66,8 +12,14 @@ UIFactory::UIFactory() {
                 text_val = std::to_string(item["content"].get<int>());
             }
         }
-        
-        return ftxui::Renderer([text_val] { return ftxui::text(text_val); });
+
+        return ftxui::Renderer([item, text_val] {
+            ftxui::Element el = ftxui::text(text_val);
+            if (item.contains("styles")) {
+                el = applyStyles(el, item["styles"]);
+            }
+            return el;
+        });
     };
 
     builders_["separator"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
@@ -77,13 +29,20 @@ UIFactory::UIFactory() {
     builders_["button"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         std::string text_val = item.value("content", "Button");
         std::string action = item.value("action", "");
-        
-        return ftxui::Button(text_val, [&js, action, on_refresh] {
+
+        auto btn = ftxui::Button(text_val, [&js, action, on_refresh] {
             if (!action.empty()) {
                 js.callAction(action);
                 on_refresh();
             }
         });
+
+        if (item.contains("styles")) {
+            btn = ftxui::Renderer(btn, [btn, item] {
+                return applyStyles(btn->Render(), item["styles"]);
+            });
+        }
+        return btn;
     };
 
     builders_["checkbox"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
@@ -99,13 +58,19 @@ UIFactory::UIFactory() {
                 on_refresh();
             }
         };
-        return ftxui::Checkbox(text_val, state.get(), option);
+        
+        auto checkbox = ftxui::Checkbox(text_val, state.get(), option);
+        if (item.contains("styles")) {
+            checkbox = ftxui::Renderer(checkbox, [checkbox, item] {
+                return applyStyles(checkbox->Render(), item["styles"]);
+            });
+        }
+        return checkbox;
     };
 
     builders_["radiobox"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         std::vector<std::string> entries = item.value("content", std::vector<std::string>{"None"});
         int selected_idx = item.value("selected", 0);
-        
         std::string action = item.value("action", ""); 
 
         auto entries_ptr = std::make_shared<std::vector<std::string>>(entries);
@@ -119,13 +84,18 @@ UIFactory::UIFactory() {
             on_refresh();
         };
 
-        return ftxui::Radiobox(entries_ptr.get(), selected_ptr.get(), option);
+        auto radiobox = ftxui::Radiobox(entries_ptr.get(), selected_ptr.get(), option);
+        if (item.contains("styles")) {
+            radiobox = ftxui::Renderer(radiobox, [radiobox, item] {
+                return applyStyles(radiobox->Render(), item["styles"]);
+            });
+        }
+        return radiobox;
     };
 
     builders_["menu"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         std::vector<std::string> entries = item.value("content", std::vector<std::string>{"None"});
         int selected_idx = item.value("selected", 0);
-        
         std::string action = item.value("action", ""); 
 
         auto entries_ptr = std::make_shared<std::vector<std::string>>(entries);
@@ -139,33 +109,43 @@ UIFactory::UIFactory() {
             on_refresh();
         };
 
-        return ftxui::Menu(entries_ptr.get(), selected_ptr.get(), option);
+        auto menu = ftxui::Menu(entries_ptr.get(), selected_ptr.get(), option);
+        if (item.contains("styles")) {
+            menu = ftxui::Renderer(menu, [menu, item] {
+                return applyStyles(menu->Render(), item["styles"]);
+            });
+        }
+        return menu;
     };
 
     builders_["toggle"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         std::vector<std::string> entries = item.value("content", std::vector<std::string>{"None"});
         int selected_idx = item.value("selected", 0);
-        
         std::string action = item.value("action", ""); 
 
         auto entries_ptr = std::make_shared<std::vector<std::string>>(entries);
         auto selected_ptr = std::make_shared<int>(selected_idx);
         
         ftxui::MenuOption option = ftxui::MenuOption::Toggle();
-        
         option.on_change = [&js, action, on_refresh, selected_ptr, entries_ptr]() {
             if (!action.empty()) {
                 js.callActionWithInt(action, *selected_ptr); 
             }
             on_refresh();
         };
-        return ftxui::Menu(entries_ptr.get(), selected_ptr.get(), option);
+        
+        auto toggle = ftxui::Menu(entries_ptr.get(), selected_ptr.get(), option);
+        if (item.contains("styles")) {
+            toggle = ftxui::Renderer(toggle, [toggle, item] {
+                return applyStyles(toggle->Render(), item["styles"]);
+            });
+        }
+        return toggle;
     };
 
     builders_["input"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         std::string placeholder = item.value("placeholder", "");
         std::string action = item.value("action", "");
-        std::string content = item.value("content", "");
 
         auto text_state = std::make_shared<std::string>();
         ftxui::InputOption option;
@@ -177,29 +157,36 @@ UIFactory::UIFactory() {
             on_refresh();
         };
 
-        return ftxui::Input(text_state.get(), placeholder, option);
+        auto input = ftxui::Input(text_state.get(), placeholder, option);
+        if (item.contains("styles")) {
+            input = ftxui::Renderer(input, [input, item] {
+                return applyStyles(input->Render(), item["styles"]);
+            });
+        }
+        return input;
     };
-    
+
     builders_["hbox"] = [this](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
         ftxui::Components children;
 
         if (item.contains("content") && item["content"].is_array()) {
             for (const auto& child : item["content"]) {
                 std::string child_type = child.value("type", "unknown");
-
                 if (builders_.count(child_type)) {
                     children.push_back(builders_[child_type](child, js, on_refresh));
                 } else {
-                    children.push_back(
-                        ftxui::Renderer([child_type] {
-                            return ftxui::text("Unknown type: " + child_type);
-                        })
-                    );
+                    children.push_back(ftxui::Renderer([child_type] { return ftxui::text("Unknown: " + child_type); }));
                 }
             }
         }
 
-        return ftxui::Container::Horizontal(children);
+        auto container = ftxui::Container::Horizontal(children);
+        if (item.contains("styles")) {
+            container = ftxui::Renderer(container, [container, item] {
+                return applyStyles(container->Render(), item["styles"]);
+            });
+        }
+        return container;
     };
     
     builders_["vbox"] = [this](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
@@ -208,20 +195,21 @@ UIFactory::UIFactory() {
         if (item.contains("content") && item["content"].is_array()) {
             for (const auto& child : item["content"]) {
                 std::string child_type = child.value("type", "unknown");
-
                 if (builders_.count(child_type)) {
                     children.push_back(builders_[child_type](child, js, on_refresh));
                 } else {
-                    children.push_back(
-                        ftxui::Renderer([child_type] {
-                            return ftxui::text("Unknown type: " + child_type);
-                        })
-                    );
+                    children.push_back(ftxui::Renderer([child_type] { return ftxui::text("Unknown: " + child_type); }));
                 }
             }
         }
 
-        return ftxui::Container::Vertical(children);
+        auto container = ftxui::Container::Vertical(children);
+        if (item.contains("styles")) {
+            container = ftxui::Renderer(container, [container, item] {
+                return applyStyles(container->Render(), item["styles"]);
+            });
+        }
+        return container;
     };
 
     builders_["slider"] = [](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
@@ -230,7 +218,7 @@ UIFactory::UIFactory() {
         std::string action = item.value("action", "");
 
         auto base_slider = ftxui::Slider(content, value.get(), 0, 100, 1);
-        return ftxui::CatchEvent(base_slider, [&js, action, on_refresh, value](ftxui::Event e) {
+        auto slider = ftxui::CatchEvent(base_slider, [&js, action, on_refresh, value](ftxui::Event e) {
             int old_value = *value;
             if (e == ftxui::Event::ArrowRight) {
                 *value = std::min(100, *value + 1);
@@ -245,6 +233,13 @@ UIFactory::UIFactory() {
             }
             return true; 
         });
+
+        if (item.contains("styles")) {
+            slider = ftxui::Renderer(slider, [slider, item] {
+                return applyStyles(slider->Render(), item["styles"]);
+            });
+        }
+        return slider;
     };
 
     builders_["window"] = [this](const nlohmann::json& item, JsEngine& js, std::function<void()> on_refresh) {
@@ -254,23 +249,25 @@ UIFactory::UIFactory() {
         if (item.contains("content") && item["content"].is_array()) {
             for (const auto& child : item["content"]) {
                 std::string child_type = child.value("type", "unknown");
-
                 if (builders_.count(child_type)) {
                     children.push_back(builders_[child_type](child, js, on_refresh));
                 } else {
-                    children.push_back(
-                        ftxui::Renderer([child_type] {
-                            return ftxui::text("Unknown type: " + child_type);
-                        })
-                    );
+                    children.push_back(ftxui::Renderer([child_type] { return ftxui::text("Unknown: " + child_type); }));
                 }
             }
         }
+        
         auto inner_container = ftxui::Container::Vertical(children);
-
-        return ftxui::Renderer(inner_container, [inner_container, title] {
+        auto win_component = ftxui::Renderer(inner_container, [inner_container, title] {
             return ftxui::window(ftxui::text(title), inner_container->Render());
         });
+
+        if (item.contains("styles")) {
+            win_component = ftxui::Renderer(win_component, [win_component, item] {
+                return applyStyles(win_component->Render(), item["styles"]);
+            });
+        }
+        return win_component;
     };
 }
 

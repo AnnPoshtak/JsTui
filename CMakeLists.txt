@@ -21,7 +21,7 @@ FetchContent_Declare(quickjs
 )
 FetchContent_MakeAvailable(quickjs)
 
-add_executable(JsTui main.cpp JsEngine.cpp UIFactory.cpp)
+add_executable(JsTui main.cpp JsEngine.cpp UIFactory.cpp ApplyStyles.cpp)
 
 target_include_directories(JsTui PRIVATE ${quickjs_SOURCE_DIR})
 target_link_libraries(JsTui PRIVATE 
